@@ -2,13 +2,17 @@ name = "liekobudik-tick"
 main = "worker.js"
 compatibility_date = "2026-01-01"
 
+# Worker len spúšťa budík podľa plánu, verejnú adresu nepotrebuje
+workers_dev = false
+preview_urls = false
+
 # Každú minútu
 [triggers]
 crons = ["* * * * *"]
 
 [vars]
 # Sem doplňte adresu appky na Verceli
-TICK_URL = "https://TVOJA-ADRESA.vercel.app/api/push/tick"
+TICK_URL = "https://liekobudik.vercel.app/api/push/tick"
 
 # Heslo sa do súboru nepíše. Nastavte ho príkazom:
 #   npx wrangler secret put CRON_SECRET
