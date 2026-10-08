@@ -1,5 +1,5 @@
 /* Liekobudík – service worker: appka sa otvorí aj bez internetu. */
-const CACHE = "liekobudik-v1";
+const CACHE = "liekobudik-v2";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
@@ -20,6 +20,7 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith("/api/")) return;
 
   // Nemenné súbory: najprv z pamäte.
   if (url.pathname.startsWith("/_next/static/") || /\.(png|svg|woff2)$/.test(url.pathname)) {
@@ -48,6 +49,88 @@ self.addEventListener("fetch", (event) => {
         if (hit) return hit;
         throw err;
       }
+    })(),
+  );
+});
+
+/* ---------- Budík zo servera ---------- */
+
+// Otvorí databázu appky v zariadení. Ak ešte neexistuje, nevytvára ju.
+function openDb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open("liekobudik");
+    req.onupgradeneeded = () => req.transaction.abort();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function idbGet(db, store, key) {
+  return new Promise((resolve) => {
+    try {
+      const req = db.transaction(store).objectStore(store).get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(undefined);
+    } catch (err) {
+      resolve(undefined);
+    }
+  });
+}
+
+// Server pošle len čas budenia. Názov lieku a meno si doplníme z údajov v zariadení.
+self.addEventListener("push", (event) => {
+  event.waitUntil(
+    (async () => {
+      let data = {};
+      try {
+        data = event.data ? event.data.json() : {};
+      } catch (err) {}
+      const base = { icon: "/icon-192.png", lang: "sk", data: { url: "/" } };
+
+      if (data.test) {
+        await self.registration.showNotification("Liekobudík", {
+          ...base,
+          body: "Skúšobné upozornenie funguje.",
+          tag: "test",
+        });
+        return;
+      }
+
+      let items = null;
+      try {
+        const db = await openDb();
+        const alarm = await idbGet(db, "alarms", data.t);
+        if (alarm && Array.isArray(alarm.items)) {
+          items = [];
+          for (const item of alarm.items) {
+            // Dávka, ktorá je už užitá alebo preskočená, sa nepripomína.
+            if (!(await idbGet(db, "intakes", item.key))) items.push(item);
+          }
+        }
+        db.close();
+      } catch (err) {}
+
+      if (items === null) {
+        await self.registration.showNotification("Liekobudík", {
+          ...base,
+          body: "Čas na liek. Otvorte appku a pozrite dnešné lieky.",
+          tag: "liekobudik",
+        });
+        return;
+      }
+
+      await Promise.all(
+        items.map((item) =>
+          self.registration.showNotification(item.title, {
+            ...base,
+            body: item.body,
+            tag: item.key,
+            renotify: true,
+            requireInteraction: true,
+            vibrate: [200, 100, 200, 100, 400],
+          }),
+        ),
+      );
     })(),
   );
 });

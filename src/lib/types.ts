@@ -65,6 +65,13 @@ export interface Reading {
   at: number;
 }
 
+/** Text upozornení pre budík; server ho nevidí, číta ho len toto zariadenie. */
+export interface Alarm {
+  /** Čas budenia v ms, zaokrúhlený na minútu */
+  ts: number;
+  items: { key: string; title: string; body: string }[];
+}
+
 export const MEMBER_COLORS = [
   "#0a57c9",
   "#5a40b8",

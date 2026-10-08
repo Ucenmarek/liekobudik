@@ -1,7 +1,7 @@
 import Dexie, { type Table } from "dexie";
 import { ymd } from "./dates";
 import { doseKey } from "./schedule";
-import type { Intake, Medicine, Member, Reading } from "./types";
+import type { Alarm, Intake, Medicine, Member, Reading } from "./types";
 
 /**
  * Všetky údaje ostávajú len v tomto zariadení (IndexedDB).
@@ -12,6 +12,7 @@ class LiekobudikDB extends Dexie {
   medicines!: Table<Medicine, string>;
   intakes!: Table<Intake, string>;
   readings!: Table<Reading, string>;
+  alarms!: Table<Alarm, number>;
 
   constructor() {
     super("liekobudik");
@@ -22,6 +23,9 @@ class LiekobudikDB extends Dexie {
     });
     this.version(2).stores({
       readings: "id, memberId, date",
+    });
+    this.version(3).stores({
+      alarms: "ts",
     });
   }
 }

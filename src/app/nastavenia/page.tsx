@@ -3,27 +3,64 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { IconBack, IconBell, IconChevron, IconPeople } from "@/components/Icons";
 import { ymd } from "@/lib/dates";
 import { db, exportBackup, importBackup, wipeAll } from "@/lib/db";
+import { currentSubscription, disablePush, enablePush, needsHomeScreen, pushSupported, sendTest, serverInfo } from "@/lib/push";
 
 export default function NastaveniaPage() {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const count = useLiveQuery(() => db.members.count(), []);
-  const [perm, setPerm] = useState<string>(() =>
-    typeof Notification === "undefined" ? "unsupported" : Notification.permission,
-  );
+  /** Stav budíka: loading | unsupported | homescreen | unconfigured | denied | off | on */
+  const [alarm, setAlarm] = useState("loading");
+  const [alarmNote, setAlarmNote] = useState("");
+  const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [confirmWipe, setConfirmWipe] = useState(false);
 
-  async function enable() {
-    try {
-      setPerm(await Notification.requestPermission());
-    } catch {
-      setPerm("denied");
+  async function refreshAlarm() {
+    if (!pushSupported()) {
+      setAlarm(needsHomeScreen() ? "homescreen" : "unsupported");
+      return;
     }
+    if (Notification.permission === "denied") {
+      setAlarm("denied");
+      return;
+    }
+    if (!(await serverInfo()).enabled) {
+      setAlarm("unconfigured");
+      return;
+    }
+    setAlarm((await currentSubscription()) && Notification.permission === "granted" ? "on" : "off");
+  }
+
+  useEffect(() => {
+    refreshAlarm();
+  }, []);
+
+  async function enable() {
+    setBusy(true);
+    setAlarmNote("");
+    const result = await enablePush();
+    if (result === "error") setAlarmNote("Budík sa nepodarilo zapnúť. Skúste to o chvíľu znova.");
+    await refreshAlarm();
+    setBusy(false);
+  }
+
+  async function disable() {
+    setBusy(true);
+    setAlarmNote("");
+    await disablePush();
+    await refreshAlarm();
+    setBusy(false);
+  }
+
+  async function test() {
+    setBusy(true);
+    setAlarmNote((await sendTest()) ? "Odoslané. Upozornenie príde o pár sekúnd." : "Skúšobné upozornenie sa nepodarilo odoslať.");
+    setBusy(false);
   }
 
   async function download() {
@@ -79,20 +116,30 @@ export default function NastaveniaPage() {
         <div className="row">
           <IconBell size={24} />
           <div className="grow">
-            <div style={{ fontSize: 17, fontWeight: 700 }}>Upozornenia</div>
+            <div style={{ fontSize: 17, fontWeight: 700 }}>Budík</div>
             <div className="muted" style={{ fontSize: 14 }}>
-              {perm === "granted" && "Povolené v tomto zariadení."}
-              {perm === "default" && "Zatiaľ nepovolené."}
-              {perm === "denied" && "Zablokované. Povoľte ich v nastaveniach prehliadača pre túto stránku."}
-              {perm === "unsupported" && "Tento prehliadač upozornenia nepodporuje. Na iPhone najprv pridajte appku na plochu."}
+              {alarm === "loading" && "Zisťujem stav…"}
+              {alarm === "on" && "Zapnutý. Upozornenie príde, aj keď je appka zavretá."}
+              {alarm === "off" && "Vypnutý. Pripomienka sa zobrazí, len keď je appka otvorená."}
+              {alarm === "denied" && "Upozornenia sú zablokované. Povoľte ich v nastaveniach prehliadača pre túto stránku."}
+              {alarm === "homescreen" && "Na iPhone najprv pridajte appku na plochu (Zdieľať → Pridať na plochu) a otvorte ju odtiaľ."}
+              {alarm === "unsupported" && "Tento prehliadač upozornenia nepodporuje."}
+              {alarm === "unconfigured" && "Budík na serveri ešte nie je nastavený. Pripomienka sa zobrazí, len keď je appka otvorená."}
             </div>
           </div>
-          {perm === "default" && (
-            <button type="button" className="btn" onClick={enable}>Povoliť</button>
+          {alarm === "off" && (
+            <button type="button" className="btn" onClick={enable} disabled={busy}>Zapnúť</button>
           )}
         </div>
-        <div className="muted" style={{ fontSize: 14 }}>
-          V tejto verzii sa pripomienka zobrazí, keď je Liekobudík otvorený. Budík, ktorý zazvoní aj pri zavretej appke, príde v ďalšej etape.
+        {alarm === "on" && (
+          <div className="grid2">
+            <button type="button" className="btn soft" onClick={test} disabled={busy}>Vyskúšať</button>
+            <button type="button" className="btn outline" onClick={disable} disabled={busy}>Vypnúť</button>
+          </div>
+        )}
+        {alarmNote && <div role="status" style={{ fontSize: 14, fontWeight: 700 }}>{alarmNote}</div>}
+        <div className="muted" style={{ fontSize: 13 }}>
+          Na server ide len čas budenia. Názvy liekov a mená ostávajú v tomto telefóne.
         </div>
       </div>
 

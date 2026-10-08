@@ -46,7 +46,7 @@ const EMPTY: SnoozeMap = {};
 let cache: SnoozeMap | null = null;
 const listeners = new Set<() => void>();
 
-function readSnoozes(): SnoozeMap {
+export function readSnoozes(): SnoozeMap {
   if (cache) return cache;
   try {
     cache = JSON.parse(localStorage.getItem(SNOOZE_KEY) || "{}") as SnoozeMap;

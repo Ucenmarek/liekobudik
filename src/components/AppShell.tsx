@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { AppIcon } from "./Icons";
+import { PushSync } from "./PushSync";
 import { Reminder } from "./Reminder";
 
 /**
@@ -32,6 +33,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="app">
       <Suspense fallback={null}>{children}</Suspense>
       <Reminder />
+      <PushSync />
     </div>
   );
 }

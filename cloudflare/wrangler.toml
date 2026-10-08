@@ -1,0 +1,15 @@
+name = "liekobudik-tick"
+main = "worker.js"
+compatibility_date = "2026-01-01"
+
+# Každú minútu
+[triggers]
+crons = ["* * * * *"]
+
+[vars]
+# Sem doplňte adresu appky na Verceli
+TICK_URL = "https://TVOJA-ADRESA.vercel.app/api/push/tick"
+
+# Heslo sa do súboru nepíše. Nastavte ho príkazom:
+#   npx wrangler secret put CRON_SECRET
+# a zadajte tú istú hodnotu ako CRON_SECRET na Verceli.

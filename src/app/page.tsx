@@ -9,6 +9,7 @@ import { BottomNav, MemberFilter } from "@/components/ui";
 import { atTime, hm, longDate, shortTime, ymd } from "@/lib/dates";
 import { db, takeDose, undoDose } from "@/lib/db";
 import { snooze, useMemberFilter, useNow, useSnoozes } from "@/lib/hooks";
+import { currentSubscription, enablePush, pushSupported, serverInfo } from "@/lib/push";
 import { PART_LABEL, newestFirst, partNow } from "@/lib/readings";
 import { FORMS, dayPart, daysLeft, daysText, doseText, dosesForDate, isLow, num } from "@/lib/schedule";
 
@@ -18,9 +19,19 @@ export default function DnesPage() {
   const today = ymd(now);
   const snoozes = useSnoozes();
   const [filter, setFilter] = useMemberFilter();
-  const [perm, setPerm] = useState<string>(() =>
-    typeof Notification === "undefined" ? "unsupported" : Notification.permission,
-  );
+  /** Ponúknuť zapnutie budíka: server je nastavený a toto zariadenie ho ešte nemá. */
+  const [offerAlarm, setOfferAlarm] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      if (!pushSupported() || Notification.permission === "denied") return;
+      if (await currentSubscription()) return;
+      if ((await serverInfo()).enabled && alive) setOfferAlarm(true);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const data = useLiveQuery(async () => {
     const [members, medicines, intakes] = await Promise.all([
@@ -57,11 +68,8 @@ export default function DnesPage() {
   const nextDue = !!next && atTime(today, next.time).getTime() <= t;
 
   async function enableNotifications() {
-    try {
-      setPerm(await Notification.requestPermission());
-    } catch {
-      setPerm("denied");
-    }
+    await enablePush();
+    setOfferAlarm(false);
   }
 
   return (
@@ -262,12 +270,12 @@ export default function DnesPage() {
           );
         })()}
 
-        {perm === "default" && medicines.length > 0 && (
+        {offerAlarm && medicines.length > 0 && (
           <div className="note yellow">
             <IconBell size={24} />
-            <div style={{ flex: 1 }}>Povoľte upozornenia, aby vás Liekobudík upozornil na čas lieku.</div>
+            <div style={{ flex: 1 }}>Zapnite budík, aby sa liek pripomenul, aj keď je appka zavretá.</div>
             <button type="button" className="btn" onClick={enableNotifications}>
-              Povoliť
+              Zapnúť
             </button>
           </div>
         )}
