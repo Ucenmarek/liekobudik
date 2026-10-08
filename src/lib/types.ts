@@ -65,6 +65,63 @@ export interface Reading {
   at: number;
 }
 
+export interface Doctor {
+  id: string;
+  name: string;
+  /** Odbornosť, napr. "Všeobecný lekár" */
+  specialty: string;
+  clinic?: string;
+  address?: string;
+  phone?: string;
+  /** Ordinačné hodiny voľným textom */
+  hours?: string;
+  note?: string;
+}
+
+export type VisitRemind = "dayBefore" | "morning" | "hourBefore";
+
+export interface Visit {
+  id: string;
+  memberId: string;
+  doctorId?: string;
+  date: string;
+  time: string;
+  reason: string;
+  /** Čo vziať so sebou */
+  bring: string[];
+  remind: VisitRemind[];
+  createdAt: number;
+}
+
+/** Preventívna prehliadka, ktorá sa pravidelne opakuje. */
+export interface Checkup {
+  id: string;
+  memberId: string;
+  name: string;
+  doctorId?: string;
+  everyMonths: number;
+  /** Kedy bola naposledy, "YYYY-MM-DD"; prázdne = ešte nebola */
+  lastDate?: string;
+  createdAt: number;
+}
+
+/** Zdravotná karta člena. Len záznam na ukázanie lekárovi. */
+export interface HealthCard {
+  memberId: string;
+  bloodGroup?: string;
+  birthDate?: string;
+  insurer?: string;
+  height?: string;
+  weight?: string;
+  drugAllergies: string[];
+  otherAllergies?: string;
+  cardFront?: Blob;
+  cardBack?: Blob;
+  conditions?: string;
+  emergencyName?: string;
+  emergencyPhone?: string;
+}
+
 /** Text upozornení pre budík; server ho nevidí, číta ho len toto zariadenie. */
 export interface Alarm {
   /** Čas budenia v ms, zaokrúhlený na minútu */

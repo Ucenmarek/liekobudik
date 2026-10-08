@@ -11,6 +11,7 @@ import { db, takeDose, undoDose } from "@/lib/db";
 import { snooze, useMemberFilter, useNow, useSnoozes } from "@/lib/hooks";
 import { currentSubscription, enablePush, pushSupported, serverInfo } from "@/lib/push";
 import { PART_LABEL, newestFirst, partNow } from "@/lib/readings";
+import { byDateAsc, isUpcoming, visitTitle, visitWhen } from "@/lib/visits";
 import { FORMS, dayPart, daysLeft, daysText, doseText, dosesForDate, isLow, num } from "@/lib/schedule";
 
 export default function DnesPage() {
@@ -45,7 +46,12 @@ export default function DnesPage() {
     const bpToday = bpMember && bpCount > 0
       ? (await db.readings.where("date").equals(today).toArray()).filter((r) => r.memberId === bpMember.id)
       : [];
-    return { members, medicines, intakes, bpMember, bpCount, bpToday };
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const [visits, doctors] = await Promise.all([
+      db.visits.where("date").between(today, ymd(tomorrow), true, true).toArray(),
+      db.doctors.toArray(),
+    ]);
+    return { members, medicines, intakes, bpMember, bpCount, bpToday, visits, doctors };
   }, [today, filter]);
 
   useEffect(() => {
@@ -145,6 +151,23 @@ export default function DnesPage() {
             </div>
           </div>
         )}
+
+        {data.visits
+          .filter((v) => (memberId === "all" || v.memberId === memberId) && isUpcoming(v, now))
+          .sort(byDateAsc)
+          .map((v) => (
+            <Link key={v.id} href="/lekari" className="visit-card" style={{ padding: "12px 14px", borderRadius: 16 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>
+                  {many ? `${memberOf(v.memberId)?.name ?? ""} · ` : ""}Návšteva lekára
+                </div>
+                <div style={{ fontSize: 17, fontWeight: 700 }}>
+                  {visitWhen(v, today)} · {visitTitle(v, data.doctors)}
+                </div>
+                {v.bring.length > 0 && <div style={{ fontSize: 13 }}>Vziať: {v.bring.join(", ").toLowerCase()}</div>}
+              </div>
+            </Link>
+          ))}
 
         {low.map((m) => {
           const left = daysLeft(m);

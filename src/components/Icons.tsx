@@ -135,6 +135,26 @@ export const IconReport = (p: P) => (
     <path d="M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6" />
   </Svg>
 );
+export const IconPhone = (p: P) => (
+  <Svg {...p}>
+    <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" />
+  </Svg>
+);
+export const IconPin = (p: P) => (
+  <Svg {...p}>
+    <path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21zM12 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" />
+  </Svg>
+);
+export const IconShield = (p: P) => (
+  <Svg {...p}>
+    <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.500-7-10V6zM9 12l2 2 4-4" />
+  </Svg>
+);
+export const IconCard = (p: P) => (
+  <Svg {...p}>
+    <path d="M4 6h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1zM7 10h4M7 14h7M16 10h1" />
+  </Svg>
+);
 export const IconChevron = (p: P) => (
   <Svg sw={2.2} {...p}>
     <path d="M9 5l7 7-7 7" />

@@ -3,6 +3,7 @@ import { db } from "./db";
 import { readSnoozes } from "./hooks";
 import { doseText, dosesForDate } from "./schedule";
 import type { Alarm, Meal } from "./types";
+import { checkupDue, visitReminderTimes, visitTitle } from "./visits";
 
 /**
  * Budík zo servera (web push). Na server ide len adresa zariadenia a časy
@@ -125,10 +126,13 @@ export async function sendTest(): Promise<boolean> {
 /** Budenia na najbližších 30 dní: neužité dávky a odložené pripomienky. */
 export async function buildAlarms(now = new Date()): Promise<Alarm[]> {
   const today = ymd(now);
-  const [members, medicines, intakes] = await Promise.all([
+  const [members, medicines, intakes, doctors, visits, checkups] = await Promise.all([
     db.members.toArray(),
     db.medicines.toArray(),
     db.intakes.where("date").aboveOrEqual(today).toArray(),
+    db.doctors.toArray(),
+    db.visits.where("date").aboveOrEqual(today).toArray(),
+    db.checkups.toArray(),
   ]);
   const snoozes = readSnoozes();
   const many = members.length > 1;
@@ -153,6 +157,42 @@ export async function buildAlarms(now = new Date()): Promise<Alarm[]> {
       };
       byTime.set(at, [...(byTime.get(at) ?? []), item]);
     }
+  }
+
+  const horizon = now.getTime() + HORIZON_DAYS * 86400000;
+  const add = (at: number, item: Alarm["items"][number]) => {
+    const ts = Math.ceil(at / 60000) * 60000;
+    if (ts <= now.getTime() || ts > horizon) return;
+    byTime.set(ts, [...(byTime.get(ts) ?? []), item]);
+  };
+  const prefix = (memberId: string) => {
+    const who = members.find((m) => m.id === memberId);
+    return many && who ? `${who.name}: ` : "";
+  };
+
+  // Návštevy lekára
+  const WHEN = { dayBefore: "Zajtra", morning: "Dnes", hourBefore: "O hodinu" };
+  for (const v of visits) {
+    for (const r of visitReminderTimes(v)) {
+      add(r.at, {
+        key: `visit|${v.id}|${r.kind}`,
+        title: `${prefix(v.memberId)}${visitTitle(v, doctors)}`,
+        body: `${WHEN[r.kind]} o ${shortTime(v.time)}${v.reason ? ` · ${v.reason}` : ""}${v.bring.length ? ` · vziať: ${v.bring.join(", ").toLowerCase()}` : ""}`,
+      });
+    }
+  }
+
+  // Preventívne prehliadky: dva týždne pred termínom o 9:00
+  for (const c of checkups) {
+    const due = checkupDue(c);
+    if (!due) continue;
+    const d = atTime(due, "09:00");
+    d.setDate(d.getDate() - 14);
+    add(d.getTime(), {
+      key: `checkup|${c.id}|${due}`,
+      title: `${prefix(c.memberId)}${c.name}`,
+      body: "Preventívna prehliadka vychádza o dva týždne. Objednajte sa.",
+    });
   }
 
   return [...byTime.entries()]

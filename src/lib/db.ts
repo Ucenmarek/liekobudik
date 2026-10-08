@@ -1,7 +1,7 @@
 import Dexie, { type Table } from "dexie";
 import { ymd } from "./dates";
 import { doseKey } from "./schedule";
-import type { Alarm, Intake, Medicine, Member, Reading } from "./types";
+import type { Alarm, Checkup, Doctor, HealthCard, Intake, Medicine, Member, Reading, Visit } from "./types";
 
 /**
  * Všetky údaje ostávajú len v tomto zariadení (IndexedDB).
@@ -13,6 +13,10 @@ class LiekobudikDB extends Dexie {
   intakes!: Table<Intake, string>;
   readings!: Table<Reading, string>;
   alarms!: Table<Alarm, number>;
+  doctors!: Table<Doctor, string>;
+  visits!: Table<Visit, string>;
+  checkups!: Table<Checkup, string>;
+  cards!: Table<HealthCard, string>;
 
   constructor() {
     super("liekobudik");
@@ -26,6 +30,12 @@ class LiekobudikDB extends Dexie {
     });
     this.version(3).stores({
       alarms: "ts",
+    });
+    this.version(4).stores({
+      doctors: "id",
+      visits: "id, memberId, date",
+      checkups: "id, memberId",
+      cards: "memberId",
     });
   }
 }
@@ -126,8 +136,11 @@ export async function deleteMedicine(id: string) {
 }
 
 export async function deleteMember(id: string) {
-  await db.transaction("rw", db.members, db.medicines, db.intakes, db.readings, async () => {
+  await db.transaction("rw", [db.members, db.medicines, db.intakes, db.readings, db.visits, db.checkups, db.cards], async () => {
     await db.readings.where("memberId").equals(id).delete();
+    await db.visits.where("memberId").equals(id).delete();
+    await db.checkups.where("memberId").equals(id).delete();
+    await db.cards.delete(id);
     const meds = await db.medicines.where("memberId").equals(id).primaryKeys();
     for (const medId of meds) {
       await db.intakes.where("medicineId").equals(medId).delete();
@@ -138,6 +151,18 @@ export async function deleteMember(id: string) {
 }
 
 /* ---------- Záloha ---------- */
+
+/** Všetky tabuľky s údajmi používateľa (bez pracovnej tabuľky budíka). */
+const ALL_TABLES = () => [
+  db.members,
+  db.medicines,
+  db.intakes,
+  db.readings,
+  db.doctors,
+  db.visits,
+  db.checkups,
+  db.cards,
+];
 
 function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -158,12 +183,23 @@ function dataUrlToBlob(url: string): Blob {
 }
 
 export async function exportBackup(): Promise<string> {
-  const [members, medicines, intakes, readings] = await Promise.all([
+  const [members, medicines, intakes, readings, doctors, visits, checkups, cards] = await Promise.all([
     db.members.toArray(),
     db.medicines.toArray(),
     db.intakes.toArray(),
     db.readings.toArray(),
+    db.doctors.toArray(),
+    db.visits.toArray(),
+    db.checkups.toArray(),
+    db.cards.toArray(),
   ]);
+  const cardsOut = await Promise.all(
+    cards.map(async ({ cardFront, cardBack, ...rest }) => ({
+      ...rest,
+      cardFront: cardFront ? await blobToDataUrl(cardFront) : undefined,
+      cardBack: cardBack ? await blobToDataUrl(cardBack) : undefined,
+    })),
+  );
   const meds = await Promise.all(
     medicines.map(async ({ photo, ...rest }) => ({
       ...rest,
@@ -172,12 +208,16 @@ export async function exportBackup(): Promise<string> {
   );
   return JSON.stringify({
     app: "liekobudik",
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
     members,
     medicines: meds,
     intakes,
     readings,
+    doctors,
+    visits,
+    checkups,
+    cards: cardsOut,
   });
 }
 
@@ -193,17 +233,29 @@ export async function importBackup(json: string) {
       photo: typeof m.photo === "string" ? dataUrlToBlob(m.photo) : undefined,
     }),
   );
-  await db.transaction("rw", db.members, db.medicines, db.intakes, db.readings, async () => {
-    await Promise.all([db.members.clear(), db.medicines.clear(), db.intakes.clear(), db.readings.clear()]);
+  const list = (v: unknown) => (Array.isArray(v) ? v : []);
+  const cards: HealthCard[] = list(data.cards).map(
+    (c: Omit<HealthCard, "cardFront" | "cardBack"> & { cardFront?: string; cardBack?: string }) => ({
+      ...c,
+      cardFront: typeof c.cardFront === "string" ? dataUrlToBlob(c.cardFront) : undefined,
+      cardBack: typeof c.cardBack === "string" ? dataUrlToBlob(c.cardBack) : undefined,
+    }),
+  );
+  await db.transaction("rw", ALL_TABLES(), async () => {
+    await Promise.all(ALL_TABLES().map((t) => t.clear()));
     await db.members.bulkPut(data.members);
     await db.medicines.bulkPut(medicines);
-    await db.intakes.bulkPut(Array.isArray(data.intakes) ? data.intakes : []);
-    await db.readings.bulkPut(Array.isArray(data.readings) ? data.readings : []);
+    await db.intakes.bulkPut(list(data.intakes));
+    await db.readings.bulkPut(list(data.readings));
+    await db.doctors.bulkPut(list(data.doctors));
+    await db.visits.bulkPut(list(data.visits));
+    await db.checkups.bulkPut(list(data.checkups));
+    await db.cards.bulkPut(cards);
   });
 }
 
 export async function wipeAll() {
-  await db.transaction("rw", db.members, db.medicines, db.intakes, db.readings, async () => {
-    await Promise.all([db.members.clear(), db.medicines.clear(), db.intakes.clear(), db.readings.clear()]);
+  await db.transaction("rw", ALL_TABLES(), async () => {
+    await Promise.all(ALL_TABLES().map((t) => t.clear()));
   });
 }
