@@ -4,11 +4,12 @@ import { useLiveQuery } from "dexie-react-hooks";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { DayPartIcon, IconBell, IconCheck, IconMinus, IconPlus, IconSettings, IconWarn } from "@/components/Icons";
+import { DayPartIcon, IconBell, IconCheck, IconHeart, IconMinus, IconPlus, IconSettings, IconWarn } from "@/components/Icons";
 import { BottomNav, MemberFilter } from "@/components/ui";
 import { atTime, hm, longDate, shortTime, ymd } from "@/lib/dates";
 import { db, takeDose, undoDose } from "@/lib/db";
 import { snooze, useMemberFilter, useNow, useSnoozes } from "@/lib/hooks";
+import { PART_LABEL, newestFirst, partNow } from "@/lib/readings";
 import { FORMS, dayPart, daysLeft, daysText, doseText, dosesForDate, isLow, num } from "@/lib/schedule";
 
 export default function DnesPage() {
@@ -27,8 +28,14 @@ export default function DnesPage() {
       db.medicines.toArray(),
       db.intakes.where("date").equals(today).toArray(),
     ]);
-    return { members, medicines, intakes };
-  }, [today]);
+    // Tlak: karta sa ukáže len tomu, kto si ho už niekedy zapísal.
+    const bpMember = members.find((m) => m.id === filter) ?? members[0];
+    const bpCount = bpMember ? await db.readings.where("memberId").equals(bpMember.id).count() : 0;
+    const bpToday = bpMember && bpCount > 0
+      ? (await db.readings.where("date").equals(today).toArray()).filter((r) => r.memberId === bpMember.id)
+      : [];
+    return { members, medicines, intakes, bpMember, bpCount, bpToday };
+  }, [today, filter]);
 
   useEffect(() => {
     if (data && data.members.length === 0) router.replace("/uvod");
@@ -223,6 +230,37 @@ export default function DnesPage() {
             Na dnes nie je naplánovaný žiadny liek.
           </div>
         )}
+
+        {data.bpMember && data.bpCount > 0 && (() => {
+          const latest = [...data.bpToday].sort(newestFirst)[0];
+          const missing = (["morning", "evening"] as const).filter((p) => !data.bpToday.some((r) => r.part === p));
+          const add = missing.includes(partNow(now)) ? partNow(now) : missing.includes("evening") ? "evening" : undefined;
+          return (
+            <div className="card row" style={{ padding: 14, gap: 14 }}>
+              <span style={{ width: 46, height: 46, borderRadius: 14, background: "var(--red-soft)", color: "var(--red)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <IconHeart size={24} />
+              </span>
+              <Link href="/merania" style={{ flex: 1, minWidth: 0, color: "inherit", textDecoration: "none" }}>
+                <div className="muted" style={{ fontSize: 13, fontWeight: 600 }}>
+                  {many ? `${data.bpMember.name} · tlak` : "Môj tlak"} {latest ? `dnes ${PART_LABEL[latest.part]}` : "dnes"}
+                </div>
+                {latest ? (
+                  <div className="tnum" style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.5 }}>
+                    {latest.sys}/{latest.dia}
+                    {latest.pulse ? <span className="muted" style={{ fontSize: 14, fontWeight: 600 }}> pulz {latest.pulse}</span> : null}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 16, fontWeight: 700 }}>Ešte nezapísaný</div>
+                )}
+              </Link>
+              {add && (
+                <Link href={`/merania/zapis?m=${data.bpMember.id}&part=${add}`} className="btn" style={{ background: "#e8e1fb", color: "#3b2a80" }}>
+                  + {add === "morning" ? "Ráno" : "Večer"}
+                </Link>
+              )}
+            </div>
+          );
+        })()}
 
         {perm === "default" && medicines.length > 0 && (
           <div className="note yellow">

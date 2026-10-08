@@ -4,7 +4,7 @@
 
 Bez registrácie. Všetky údaje ostávajú len v zariadení (IndexedDB), nič sa neposiela na server.
 
-## Čo je hotové (etapa 1: Lieky + Dnes)
+## Čo je hotové (etapy 1 a 2: Lieky, Dnes, Merania)
 
 - Úvod a členovia rodiny (meno, farba, poznámka)
 - Nový liek: fotka krabičky, názov, na čo je, forma, kusov v balení, zásoba doma
@@ -12,13 +12,13 @@ Bez registrácie. Všetky údaje ostávajú len v zariadení (IndexedDB), nič s
 - Dnes: ďalšia dávka, potvrdenie užitia, odloženie o 15 minút, upozornenie na dochádzajúcu zásobu
 - Lieky: zásoba a na koľko dní vystačí, „Kúpil som nové balenie“, „Užiť teraz“
 - Celoobrazovková pripomienka, keď príde čas dávky a appka je otvorená
+- Merania: zápis tlaku ráno a večer, priemery a graf za 7 dní, prehľad pre lekára na vytlačenie (bez vyhodnocovania hodnôt)
 - Záloha do súboru a obnovenie zo zálohy
 - PWA: dá sa pridať na plochu telefónu a otvorí sa aj bez internetu
 
 ## Čo príde
 
 - Budík zo servera (push), ktorý zazvoní aj pri zavretej appke, a e-mail
-- Merania: tlak ráno a večer
 - Lekári: návštevy, preventívne prehliadky, kontakty, zdravotná karta
 - Fotka alebo avatar člena rodiny
 

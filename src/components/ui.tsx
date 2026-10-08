@@ -28,15 +28,18 @@ export function MemberFilter({
   members,
   value,
   onChange,
+  all = true,
 }: {
   members: Member[];
   value: string;
   onChange: (id: string) => void;
+  /** Ponúknuť aj možnosť „Všetci“ */
+  all?: boolean;
 }) {
   if (members.length < 2) return null;
   return (
     <div className="members" role="group" aria-label="Člen rodiny">
-      <button
+      {all && <button
         type="button"
         aria-pressed={value === "all"}
         onClick={() => onChange("all")}
@@ -46,7 +49,7 @@ export function MemberFilter({
           <IconPeople />
         </span>
         <span>Všetci</span>
-      </button>
+      </button>}
       {members.map((m) => (
         <button
           key={m.id}

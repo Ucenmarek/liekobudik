@@ -34,7 +34,7 @@ export default function NastaveniaPage() {
     a.download = `liekobudik-zaloha-${ymd(new Date())}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    setMessage("Záloha je stiahnutá. Obsahuje lieky, fotky aj históriu užívania.");
+    setMessage("Záloha je stiahnutá. Obsahuje lieky, fotky, históriu užívania aj merania.");
   }
 
   async function restore(file?: File) {
@@ -116,7 +116,7 @@ export default function NastaveniaPage() {
 
       {confirmWipe ? (
         <div className="note red" style={{ flexDirection: "column", alignItems: "stretch" }}>
-          <div>Vymazať všetkých členov, lieky aj históriu z tohto zariadenia? Nedá sa to vrátiť.</div>
+          <div>Vymazať všetkých členov, lieky, merania aj históriu z tohto zariadenia? Nedá sa to vrátiť.</div>
           <div className="grid2">
             <button type="button" className="btn outline" onClick={() => setConfirmWipe(false)}>Ponechať</button>
             <button type="button" className="btn danger" onClick={wipe}>Vymazať všetko</button>

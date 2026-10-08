@@ -1,7 +1,7 @@
 import Dexie, { type Table } from "dexie";
 import { ymd } from "./dates";
 import { doseKey } from "./schedule";
-import type { Intake, Medicine, Member } from "./types";
+import type { Intake, Medicine, Member, Reading } from "./types";
 
 /**
  * Všetky údaje ostávajú len v tomto zariadení (IndexedDB).
@@ -11,6 +11,7 @@ class LiekobudikDB extends Dexie {
   members!: Table<Member, string>;
   medicines!: Table<Medicine, string>;
   intakes!: Table<Intake, string>;
+  readings!: Table<Reading, string>;
 
   constructor() {
     super("liekobudik");
@@ -18,6 +19,9 @@ class LiekobudikDB extends Dexie {
       members: "id, order",
       medicines: "id, memberId",
       intakes: "id, medicineId, date",
+    });
+    this.version(2).stores({
+      readings: "id, memberId, date",
     });
   }
 }
@@ -118,7 +122,8 @@ export async function deleteMedicine(id: string) {
 }
 
 export async function deleteMember(id: string) {
-  await db.transaction("rw", db.members, db.medicines, db.intakes, async () => {
+  await db.transaction("rw", db.members, db.medicines, db.intakes, db.readings, async () => {
+    await db.readings.where("memberId").equals(id).delete();
     const meds = await db.medicines.where("memberId").equals(id).primaryKeys();
     for (const medId of meds) {
       await db.intakes.where("medicineId").equals(medId).delete();
@@ -149,10 +154,11 @@ function dataUrlToBlob(url: string): Blob {
 }
 
 export async function exportBackup(): Promise<string> {
-  const [members, medicines, intakes] = await Promise.all([
+  const [members, medicines, intakes, readings] = await Promise.all([
     db.members.toArray(),
     db.medicines.toArray(),
     db.intakes.toArray(),
+    db.readings.toArray(),
   ]);
   const meds = await Promise.all(
     medicines.map(async ({ photo, ...rest }) => ({
@@ -162,11 +168,12 @@ export async function exportBackup(): Promise<string> {
   );
   return JSON.stringify({
     app: "liekobudik",
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     members,
     medicines: meds,
     intakes,
+    readings,
   });
 }
 
@@ -182,16 +189,17 @@ export async function importBackup(json: string) {
       photo: typeof m.photo === "string" ? dataUrlToBlob(m.photo) : undefined,
     }),
   );
-  await db.transaction("rw", db.members, db.medicines, db.intakes, async () => {
-    await Promise.all([db.members.clear(), db.medicines.clear(), db.intakes.clear()]);
+  await db.transaction("rw", db.members, db.medicines, db.intakes, db.readings, async () => {
+    await Promise.all([db.members.clear(), db.medicines.clear(), db.intakes.clear(), db.readings.clear()]);
     await db.members.bulkPut(data.members);
     await db.medicines.bulkPut(medicines);
     await db.intakes.bulkPut(Array.isArray(data.intakes) ? data.intakes : []);
+    await db.readings.bulkPut(Array.isArray(data.readings) ? data.readings : []);
   });
 }
 
 export async function wipeAll() {
-  await db.transaction("rw", db.members, db.medicines, db.intakes, async () => {
-    await Promise.all([db.members.clear(), db.medicines.clear(), db.intakes.clear()]);
+  await db.transaction("rw", db.members, db.medicines, db.intakes, db.readings, async () => {
+    await Promise.all([db.members.clear(), db.medicines.clear(), db.intakes.clear(), db.readings.clear()]);
   });
 }

@@ -47,6 +47,24 @@ export interface Intake {
   at: number;
 }
 
+export type ReadingPart = "morning" | "evening";
+
+/** Meranie tlaku. Len záznam, appka hodnoty nevyhodnocuje. */
+export interface Reading {
+  id: string;
+  memberId: string;
+  date: string;
+  time: string;
+  part: ReadingPart;
+  /** Horný (systolický) tlak v mmHg */
+  sys: number;
+  /** Dolný (diastolický) tlak v mmHg */
+  dia: number;
+  pulse?: number;
+  note?: string;
+  at: number;
+}
+
 export const MEMBER_COLORS = [
   "#0a57c9",
   "#5a40b8",

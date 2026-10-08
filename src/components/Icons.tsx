@@ -130,13 +130,18 @@ export const IconEdit = (p: P) => (
     <path d="M4 20h4L19 9l-4-4L4 16zM13 7l4 4" />
   </Svg>
 );
+export const IconReport = (p: P) => (
+  <Svg {...p}>
+    <path d="M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6" />
+  </Svg>
+);
 export const IconChevron = (p: P) => (
   <Svg sw={2.2} {...p}>
     <path d="M9 5l7 7-7 7" />
   </Svg>
 );
 
-export function DayPartIcon({ part, ...p }: P & { part: DayPart }) {
+export function DayPartIcon({ part, ...p }: P & { part: DayPart | "morning" | "evening" }) {
   if (part === "morning") return <IconSunrise {...p} />;
   if (part === "noon") return <IconSun {...p} />;
   return <IconMoon {...p} />;
