@@ -155,6 +155,12 @@ export const IconCard = (p: P) => (
     <path d="M4 6h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1zM7 10h4M7 14h7M16 10h1" />
   </Svg>
 );
+export const IconInfo = (p: P) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 11v6M12 7.5h.01" />
+  </Svg>
+);
 export const IconChevron = (p: P) => (
   <Svg sw={2.2} {...p}>
     <path d="M9 5l7 7-7 7" />

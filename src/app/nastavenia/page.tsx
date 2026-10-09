@@ -4,7 +4,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { IconBack, IconBell, IconChevron, IconPeople } from "@/components/Icons";
+import { IconBack, IconBell, IconChevron, IconInfo, IconPeople } from "@/components/Icons";
 import { ymd } from "@/lib/dates";
 import { db, exportBackup, importBackup, wipeAll } from "@/lib/db";
 import { currentSubscription, disablePush, enablePush, needsHomeScreen, pushSupported, sendTest, serverInfo } from "@/lib/push";
@@ -158,6 +158,15 @@ export default function NastaveniaPage() {
         <div className="muted" style={{ fontSize: 13 }}>Obnovenie nahradí všetky údaje v tomto zariadení obsahom zálohy.</div>
         {message && <div role="status" style={{ fontSize: 14, fontWeight: 700 }}>{message}</div>}
       </div>
+
+      <Link href="/nastavenia/o-aplikacii" className="card row" style={{ textDecoration: "none", color: "inherit", minHeight: 64 }}>
+        <IconInfo size={24} />
+        <div className="grow">
+          <div style={{ fontSize: 17, fontWeight: 700 }}>O aplikácii</div>
+          <div className="muted" style={{ fontSize: 14 }}>Kde sú vaše údaje a ako Liekobudík používať</div>
+        </div>
+        <IconChevron size={20} />
+      </Link>
 
       <div className="grow" />
 
