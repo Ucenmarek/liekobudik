@@ -161,6 +161,12 @@ export const IconInfo = (p: P) => (
     <path d="M12 11v6M12 7.5h.01" />
   </Svg>
 );
+export const IconZoom = (p: P) => (
+  <Svg sw={2.4} {...p}>
+    <circle cx="10.5" cy="10.5" r="6.5" />
+    <path d="M15.5 15.5 20 20M10.5 8v5M8 10.500h5" />
+  </Svg>
+);
 export const IconChevron = (p: P) => (
   <Svg sw={2.2} {...p}>
     <path d="M9 5l7 7-7 7" />

@@ -4,8 +4,8 @@ import { useLiveQuery } from "dexie-react-hooks";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { DayPartIcon, IconBack, IconCamera, IconCheck } from "@/components/Icons";
-import { Avatar, MedPhoto } from "@/components/ui";
+import { DayPartIcon, IconBack, IconCamera, IconCheck, IconZoom } from "@/components/Icons";
+import { Avatar, MedPhoto, PhotoViewer, ZoomPhoto } from "@/components/ui";
 import { ymd } from "@/lib/dates";
 import { db, deleteMedicine, uid } from "@/lib/db";
 import { useMemberFilter } from "@/lib/hooks";
@@ -102,6 +102,7 @@ export default function LiekPage() {
   const [error, setError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [preview, setPreview] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -270,10 +271,17 @@ export default function LiekPage() {
             )}
           </button>
           {f.photo && (
-            <button type="button" className="link-btn" style={{ alignSelf: "flex-start" }} onClick={() => set({ photo: undefined })}>
-              Odstrániť fotku
-            </button>
+            <div className="between">
+              <button type="button" className="btn soft" style={{ minHeight: 44 }} onClick={() => setPreview(true)}>
+                <IconZoom size={18} />
+                Náhľad fotky
+              </button>
+              <button type="button" className="link-btn" onClick={() => set({ photo: undefined })}>
+                Odstrániť fotku
+              </button>
+            </div>
           )}
+          {preview && <PhotoViewer blob={f.photo} label={f.name || "Fotka krabičky"} onClose={() => setPreview(false)} />}
         </div>
 
         <div className="stack">
@@ -350,7 +358,7 @@ export default function LiekPage() {
       </div>
 
       <div className="card row" style={{ padding: "10px 14px 10px 10px" }}>
-        <MedPhoto blob={f.photo} size={60} />
+        <ZoomPhoto blob={f.photo} size={60} label={f.name} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 18, fontWeight: 800 }}>{f.name}</div>
           <div className="muted" style={{ fontSize: 14 }}>

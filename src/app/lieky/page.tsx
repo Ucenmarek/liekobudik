@@ -4,7 +4,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import Link from "next/link";
 import { useState } from "react";
 import { DayPartIcon, IconClock, IconPlus } from "@/components/Icons";
-import { Avatar, BottomNav, MedPhoto, MemberFilter } from "@/components/ui";
+import { Avatar, BottomNav, MemberFilter, ZoomPhoto } from "@/components/ui";
 import { shortDate, shortTime } from "@/lib/dates";
 import { db, restock, takeNow } from "@/lib/db";
 import { useMemberFilter } from "@/lib/hooks";
@@ -88,8 +88,8 @@ export default function LiekyPage() {
           return (
             <div key={m.id} className={`card${low ? " low" : ""}`} style={{ display: "flex", flexDirection: "column", gap: 8, padding: low ? 10 : 12 }}>
               <div className="row">
+                <ZoomPhoto blob={m.photo} size={56} label={m.name} />
                 <Link href={`/lieky/liek?id=${m.id}`} className="med-link" aria-label={`Upraviť ${m.name}`}>
-                  <MedPhoto blob={m.photo} size={56} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="med-name">
                       <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{m.name}</span>

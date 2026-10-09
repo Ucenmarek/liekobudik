@@ -9,7 +9,7 @@ import { snooze, useNow, useSnoozes } from "@/lib/hooks";
 import { doseText, dosesForDate, type Dose } from "@/lib/schedule";
 import type { Meal } from "@/lib/types";
 import { IconAlarm, IconCheck } from "./Icons";
-import { Avatar, MedPhoto } from "./ui";
+import { Avatar, ZoomPhoto } from "./ui";
 
 /** Ako dlho po plánovanom čase sa pripomienka ešte sama zobrazí. */
 const WINDOW_MS = 60 * 60000;
@@ -105,7 +105,7 @@ export function Reminder() {
           </div>
 
           <div style={{ width: "100%", background: "#fff", color: "#10201f", borderRadius: 22, padding: 18, textAlign: "left", display: "flex", alignItems: "center", gap: 14 }}>
-            <MedPhoto blob={med.photo} size={88} radius={16} />
+            <ZoomPhoto blob={med.photo} size={88} radius={16} label={med.name} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.15 }}>{med.name}</div>
               {med.purpose && <div className="muted" style={{ fontSize: 16 }}>{med.purpose}</div>}

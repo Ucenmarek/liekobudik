@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { useObjectUrl } from "@/lib/hooks";
 import type { Member } from "@/lib/types";
-import { IconCard, IconPeople, IconPerson, IconPill, IconPulse, IconToday } from "./Icons";
+import { IconCard, IconPeople, IconPerson, IconPill, IconPulse, IconToday, IconZoom } from "./Icons";
 
 export function Avatar({ member, size = 40 }: { member?: Member; size?: number }) {
   return (
@@ -85,6 +86,53 @@ export function MedPhoto({
     <span className="photo" style={style}>
       <IconPill size={Math.round(size * 0.46)} />
     </span>
+  );
+}
+
+/** Fotka na celú obrazovku. Zavrie sa ťuknutím kamkoľvek. */
+export function PhotoViewer({ blob, label, onClose }: { blob?: Blob | null; label: string; onClose: () => void }) {
+  const url = useObjectUrl(blob);
+  if (!url) return null;
+  return (
+    <button type="button" className="zoom" aria-label="Zavrieť fotku" onClick={onClose}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={url} alt={label} />
+      <span className="zoom-caption">{label}</span>
+      <span className="zoom-close">Zavrieť</span>
+    </button>
+  );
+}
+
+/** Malá fotka krabičky, ktorá sa ťuknutím zväčší. Bez fotky ukáže len ikonu. */
+export function ZoomPhoto({
+  blob,
+  size,
+  radius = 12,
+  label,
+}: {
+  blob?: Blob | null;
+  size: number;
+  radius?: number;
+  label: string;
+}) {
+  const [open, setOpen] = useState(false);
+  if (!blob) return <MedPhoto blob={blob} size={size} radius={radius} />;
+  return (
+    <>
+      <button
+        type="button"
+        className="zoom-thumb"
+        style={{ width: size, height: size, borderRadius: radius }}
+        aria-label={`Zväčšiť fotku: ${label}`}
+        onClick={() => setOpen(true)}
+      >
+        <MedPhoto blob={blob} size={size} radius={radius} />
+        <span className="zoom-badge">
+          <IconZoom size={13} />
+        </span>
+      </button>
+      {open && <PhotoViewer blob={blob} label={label} onClose={() => setOpen(false)} />}
+    </>
   );
 }
 
