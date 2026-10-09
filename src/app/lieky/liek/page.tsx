@@ -14,9 +14,9 @@ import { FORMS, doseText, num, type DayPart } from "@/lib/schedule";
 import type { Form, Frequency, Meal, Medicine } from "@/lib/types";
 
 const PRESETS: { time: string; label: string; part: DayPart }[] = [
-  { time: "08:00", label: "Ráno", part: "morning" },
+  { time: "07:00", label: "Ráno", part: "morning" },
   { time: "13:00", label: "Obed", part: "noon" },
-  { time: "20:00", label: "Večer", part: "evening" },
+  { time: "19:00", label: "Večer", part: "evening" },
 ];
 const PRESET_TIMES = PRESETS.map((p) => p.time);
 const WEEKDAYS: [number, string][] = [[1, "Po"], [2, "Ut"], [3, "St"], [4, "Št"], [5, "Pi"], [6, "So"], [0, "Ne"]];
@@ -59,7 +59,7 @@ function blank(memberId: string): Draft {
     dose: 1,
     frequency: "daily",
     weekdays: [1, 2, 3, 4, 5],
-    times: ["08:00"],
+    times: ["07:00"],
     meal: "any",
     endDate: "",
   };
