@@ -6,8 +6,9 @@ import { useEffect, useState } from "react";
 import { IconBack, IconCheck } from "@/components/Icons";
 import { db, uid } from "@/lib/db";
 import type { Doctor } from "@/lib/types";
+import { parseMapShare } from "@/lib/visits";
 
-const blank: Doctor = { id: "", name: "", specialty: "", clinic: "", address: "", phone: "", hours: "", note: "" };
+const blank: Doctor = { id: "", name: "", specialty: "", clinic: "", address: "", mapLink: "", phone: "", hours: "", note: "" };
 
 export default function LekarPage() {
   const router = useRouter();
@@ -41,10 +42,33 @@ export default function LekarPage() {
     </div>
   );
 
+  /** Vloží odkaz z mapy; zo zdieľaného textu vyberie odkaz a doplní názov ambulancie, ak chýba. */
+  function applyMapText(text: string): boolean {
+    if (!f) return false;
+    const parsed = parseMapShare(text);
+    if (!parsed) return false;
+    set({ mapLink: parsed.link, clinic: f.clinic?.trim() ? f.clinic : parsed.label || f.clinic });
+    return true;
+  }
+
+  async function pasteMapLink() {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!applyMapText(text)) setError("V schránke nie je odkaz. Skopírujte ho v mapách cez Zdieľať.");
+    } catch {
+      setError("Schránku sa nepodarilo prečítať. Odkaz vložte do poľa ručne.");
+    }
+  }
+
   async function save() {
     if (!f) return;
     if (!f.name.trim() && !f.specialty.trim()) {
       setError("Napíšte meno lekára alebo odbornosť.");
+      return;
+    }
+    const link = f.mapLink?.trim();
+    if (link && !parseMapShare(link)) {
+      setError("Odkaz na mapu má začínať https://");
       return;
     }
     const clean = (s?: string) => s?.trim() || undefined;
@@ -54,6 +78,7 @@ export default function LekarPage() {
       specialty: f.specialty.trim(),
       clinic: clean(f.clinic),
       address: clean(f.address),
+      mapLink: link ? parseMapShare(link)!.link : undefined,
       phone: clean(f.phone),
       hours: clean(f.hours),
       note: clean(f.note),
@@ -81,6 +106,29 @@ export default function LekarPage() {
       {text("clinic", "Ambulancia alebo zariadenie (nepovinné)")}
       {text("phone", "Telefón (nepovinné)", "", "tel")}
       {text("address", "Adresa (nepovinné)", "ulica, mesto")}
+
+      <div className="stack">
+        <label className="label" htmlFor="mapa">Odkaz z Google Máp (nepovinné)</label>
+        <div className="row">
+          <input
+            id="mapa"
+            className="field"
+            type="url"
+            inputMode="url"
+            autoComplete="off"
+            placeholder="https://maps.app.goo.gl/…"
+            value={f.mapLink ?? ""}
+            onChange={(e) => set({ mapLink: e.target.value })}
+            onPaste={(e) => {
+              if (applyMapText(e.clipboardData.getData("text"))) e.preventDefault();
+            }}
+          />
+          <button type="button" className="btn soft" onClick={pasteMapLink}>Vložiť</button>
+        </div>
+        <div className="muted" style={{ fontSize: 13 }}>
+          V Google Mapách otvorte ambulanciu, ťuknite na Zdieľať a skopírujte odkaz. Tlačidlo Mapa potom otvorí presne toto miesto.
+        </div>
+      </div>
       {text("hours", "Ordinačné hodiny (nepovinné)", "napr. Po–Pi 7:00–13:00")}
       {text("note", "Poznámka (nepovinné)", "napr. objednať sa telefonicky")}
 

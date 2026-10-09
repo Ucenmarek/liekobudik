@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useObjectUrl } from "@/lib/hooks";
 import type { Member } from "@/lib/types";
-import { IconPeople, IconPerson, IconPill, IconPulse, IconToday } from "./Icons";
+import { IconCard, IconPeople, IconPerson, IconPill, IconPulse, IconToday } from "./Icons";
 
 export function Avatar({ member, size = 40 }: { member?: Member; size?: number }) {
   return (
@@ -93,6 +93,7 @@ const TABS = [
   { href: "/lieky", label: "Lieky", Icon: IconPill },
   { href: "/merania", label: "Merania", Icon: IconPulse },
   { href: "/lekari", label: "Lekári", Icon: IconPerson },
+  { href: "/karta", label: "Karta", Icon: IconCard },
 ];
 
 export function BottomNav() {

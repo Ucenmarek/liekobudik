@@ -111,4 +111,25 @@ export function visitReminderTimes(v: Visit): { kind: VisitRemind; at: number }[
 export const mapUrl = (address: string) =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 
+/**
+ * Z textu zdieľaného z mapy vyberie odkaz a prípadný názov miesta.
+ * Google Mapy pri zdieľaní posielajú názov a pod ním odkaz.
+ */
+export function parseMapShare(text: string): { link: string; label: string } | null {
+  const match = text.match(/https:\/\/[^\s<>"]+/);
+  if (!match) return null;
+  const link = match[0].replace(/[),.;]+$/, "");
+  try {
+    new URL(link);
+  } catch {
+    return null;
+  }
+  const label = text
+    .slice(0, match.index)
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)[0] ?? "";
+  return { link, label };
+}
+
 export const telUrl = (phone: string) => `tel:${phone.replace(/[^\d+]/g, "")}`;

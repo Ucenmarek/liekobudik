@@ -731,8 +731,8 @@ select.field {
   background: #fff;
   border-top: 1px solid var(--line);
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  padding: 8px 8px calc(10px + env(safe-area-inset-bottom));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  padding: 8px 4px calc(10px + env(safe-area-inset-bottom));
   z-index: 10;
 }
 
@@ -968,6 +968,7 @@ select.field {
     max-width: none;
   }
   .no-print,
+  .nav,
   .reminder {
     display: none !important;
   }

@@ -72,6 +72,8 @@ export interface Doctor {
   specialty: string;
   clinic?: string;
   address?: string;
+  /** Odkaz na miesto v mape, napr. zdieľaný z Google Máp */
+  mapLink?: string;
   phone?: string;
   /** Ordinačné hodiny voľným textom */
   hours?: string;

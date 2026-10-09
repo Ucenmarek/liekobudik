@@ -3,7 +3,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import Link from "next/link";
 import { useState } from "react";
-import { IconCard, IconChevron, IconEdit, IconPhone, IconPin, IconPlus, IconShield } from "@/components/Icons";
+import { IconChevron, IconEdit, IconPhone, IconPin, IconPlus, IconShield } from "@/components/Icons";
 import { Avatar, BottomNav, MemberFilter } from "@/components/ui";
 import { parseYmd, ymd } from "@/lib/dates";
 import { db } from "@/lib/db";
@@ -45,7 +45,6 @@ export default function LekariPage() {
     list.filter((x) => memberId === "all" || x.memberId === memberId);
   const many = members.length > 1;
   const who = (id: string) => members.find((m) => m.id === id);
-  const cardMember = memberId === "all" ? members[0]?.id : memberId;
 
   const visits = mine(data.visits).sort(byDateAsc);
   const upcoming = visits.filter((v) => isUpcoming(v, now));
@@ -155,19 +154,6 @@ export default function LekariPage() {
           </>
         )}
 
-        {cardMember && (
-          <Link href={`/lekari/karta?m=${cardMember}`} className="card row" style={{ textDecoration: "none", color: "inherit", minHeight: 64 }}>
-            <span className="part" style={{ background: "var(--red-soft)", color: "var(--red)" }}>
-              <IconCard />
-            </span>
-            <div className="grow">
-              <div style={{ fontSize: 17, fontWeight: 700 }}>Zdravotná karta</div>
-              <div className="muted" style={{ fontSize: 14 }}>Alergie, krvná skupina, lieky, kartička poistenca</div>
-            </div>
-            <IconChevron size={20} />
-          </Link>
-        )}
-
         <div className="between" style={{ marginTop: 6 }}>
           <h2 className="h2">Kontakty</h2>
           <Link href="/lekari/lekar" className="link-btn" style={{ textDecoration: "none", fontWeight: 700 }}>
@@ -200,16 +186,16 @@ export default function LekariPage() {
                 <IconEdit size={20} />
               </Link>
             </div>
-            {(d.phone || d.address) && (
-              <div style={{ display: "grid", gridTemplateColumns: d.phone && d.address ? "repeat(2, minmax(0, 1fr))" : "1fr", gap: 10 }}>
+            {(d.phone || d.address || d.mapLink) && (
+              <div style={{ display: "grid", gridTemplateColumns: d.phone && (d.address || d.mapLink) ? "repeat(2, minmax(0, 1fr))" : "1fr", gap: 10 }}>
                 {d.phone && (
                   <a href={telUrl(d.phone)} className="btn soft">
                     <IconPhone size={18} />
                     Zavolať
                   </a>
                 )}
-                {d.address && (
-                  <a href={mapUrl(d.address)} target="_blank" rel="noopener noreferrer" className="btn soft">
+                {(d.mapLink || d.address) && (
+                  <a href={d.mapLink || mapUrl(d.address ?? "")} target="_blank" rel="noopener noreferrer" className="btn soft">
                     <IconPin size={18} />
                     Mapa
                   </a>
